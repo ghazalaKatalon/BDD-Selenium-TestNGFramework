@@ -68,11 +68,8 @@ Review the Output: After running each class, check the Katalon Studio folders (e
 Step 4: Import Converted Files into Katalon Studio
 Once the conversion classes have been run, you will need to:
 
-Import the converted test cases, test objects, and step definitions into your Katalon Studio project. You can do this by:
-Going to Katalon Studio.
-Clicking File > Import and selecting the appropriate files to import into your project.
-Step 5: Running Tests in Katalon Studio
-Once the files are successfully imported:
+Step 4: Run Tests in Katalon Studio
+Once the files are successfully converted:
 
 Navigate to Test Cases in Katalon Studio.
 Select the converted test case (e.g., LoginTestCase).
