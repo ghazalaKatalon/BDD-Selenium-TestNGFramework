@@ -1,152 +1,97 @@
-# BDD-Selenium-TestNGFramework
-A robust, scalable, and modular framework combining Behavior-Driven Development (BDD) with Selenium and TestNG for efficient automation testing of web applications.
-Converting Selenium BDD (Cucumber) to Katalon Studio
-This guide demonstrates how to convert your Selenium objects, step definitions, and feature files into Katalon Studio tests by running a Java program. Katalon Studio is a powerful test automation platform that can import and run your existing Selenium-based tests.
+# BDD-Selenium-TestNGFramework to Katalon Studio BDD Cucumber Test
+# Conversion from Selenium BDD to Katalon Studio
+
+This guide walks you through the process of converting your Selenium BDD tests (including feature files, page objects, and step definitions) into Katalon Studio test cases using a simple Java program.
 
 Prerequisites
-Ensure that the following are installed and configured:
+Before proceeding, make sure you have the following installed:
 
-Java JDK 8 or later
 Katalon Studio (latest version)
+Java JDK (version 8 or higher)
 Selenium WebDriver
-Cucumber (for BDD support)
+Cucumber (for BDD testing)
 TestNG (for test execution)
-Steps to Convert Selenium Objects, Step Definitions, and Feature Files to Katalon Studio
-Step 1: Set Up Your Selenium Project
-Create a Maven Project with the following dependencies in your pom.xml:
-xml
-Copy code
-<dependencies>
-    <!-- Selenium WebDriver -->
-    <dependency>
-        <groupId>org.seleniumhq.selenium</groupId>
-        <artifactId>selenium-java</artifactId>
-        <version>4.0.0</version>
-    </dependency>
+Overview
+We’ve created three dedicated Java classes that automate the process of converting your existing Selenium BDD project into Katalon Studio-compatible format. These classes will:
 
-    <!-- Cucumber for BDD -->
-    <dependency>
-        <groupId>io.cucumber</groupId>
-        <artifactId>cucumber-java</artifactId>
-        <version>7.10.0</version>
-    </dependency>
+Convert feature files (written in Gherkin) into Katalon test cases.
+Convert page object models (Selenium objects) into Katalon test objects.
+Convert step definitions from Cucumber into Katalon step definitions.
+You will only need to run these classes once, and they will handle the conversion for you.
 
-    <!-- Cucumber TestNG Integration -->
-    <dependency>
-        <groupId>io.cucumber</groupId>
-        <artifactId>cucumber-testng</artifactId>
-        <version>7.10.0</version>
-    </dependency>
+Conversion Process
+Step 1: Prepare Your Files
+Ensure that the following files are present in your Selenium BDD project:
 
-    <!-- WebDriver Manager (to manage browsers) -->
-    <dependency>
-        <groupId>io.github.bonigarcia</groupId>
-        <artifactId>webdrivermanager</artifactId>
-        <version>5.3.0</version>
-    </dependency>
-</dependencies>
-Page Object Model (POM): Create classes for your Selenium WebDriver elements. For example, create a LoginPage class that represents your login page with elements like username, password, and login button.
-java
-Copy code
-public class LoginPage {
-    private WebDriver driver;
+Feature Files (*.feature)
+Located in the src/test/resources folder.
+Page Objects (*.java files with @FindBy annotations)
+Typically found in the src/main/java folder.
+Step Definitions (*.java files with step definition methods like @Given, @When, @Then)
+Found in the src/test/java folder.
+Step 2: Running the Conversion Classes
+There are three key classes to run for the conversion:
 
-    @FindBy(id = "username")
-    private WebElement usernameField;
+1. FeatureFileConverter
+This class converts your Gherkin feature files into Katalon Studio-compatible test cases.
 
-    @FindBy(id = "password")
-    private WebElement passwordField;
+How to use:
 
-    @FindBy(id = "loginButton")
-    private WebElement loginButton;
+Ensure the source feature file is located in your project (e.g., src/test/resources/login.feature).
+Run the FeatureFileConverter class.
+The converted test case will be saved in the Katalon project’s Test Cases folder.
+2. ObjectsConverter
+This class converts your Selenium Page Object models into Katalon test objects.
 
-    public LoginPage(WebDriver driver) {
-        this.driver = driver;
-        PageFactory.initElements(driver, this);
-    }
+How to use:
 
-    public void login(String username, String password) {
-        usernameField.sendKeys(username);
-        passwordField.sendKeys(password);
-        loginButton.click();
-    }
-}
-Step 2: Convert Step Definitions for Cucumber
-Create Step Definitions: In your step definition file, map the Gherkin steps to Java methods. Example:
-java
-Copy code
-public class LoginSteps {
-    private WebDriver driver;
-    private LoginPage loginPage;
+Make sure the Selenium Page Object (e.g., LoginPage.java) is located in your project (e.g., src/main/java).
+Run the ObjectsConverter class.
+The converted test object will be placed into the Test Objects folder in Katalon Studio.
+3. StepDefinitionsConverter
+This class will convert your Cucumber step definitions into Katalon step definitions.
 
-    @Given("User is on the login page")
-    public void userIsOnLoginPage() {
-        driver.get("http://example.com/login");
-        loginPage = new LoginPage(driver);
-    }
+How to use:
 
-    @When("User enters username {string} and password {string}")
-    public void userEntersUsernameAndPassword(String username, String password) {
-        loginPage.login(username, password);
-    }
+Ensure your Cucumber step definitions (e.g., LoginSteps.java) are available in the project (e.g., src/test/java).
+Run the StepDefinitionsConverter class.
+The converted step definitions will be placed in the Keywords or Test Cases folder in Katalon Studio.
+Step 3: Running the Classes
+Once your files are in place, follow these simple steps to perform the conversion:
 
-    @Then("User should be logged in successfully")
-    public void userShouldBeLoggedInSuccessfully() {
-        // Verification logic for successful login
-    }
-}
-Step 3: Convert Feature Files
-Feature Files: Write your Gherkin feature files using the .feature extension. For example:
-gherkin
-Copy code
-Feature: Login Feature
+Compile the Java classes: Ensure your project is compiled and ready to run.
+Run each conversion class:
+Run the FeatureFileConverter class to convert your feature files.
+Run the ObjectsConverter class to convert your page objects.
+Run the StepDefinitionsConverter class to convert your step definitions.
+Review the Output: After running each class, check the Katalon Studio folders (e.g., Test Cases, Test Objects, Keywords) for the converted files.
+Step 4: Import Converted Files into Katalon Studio
+Once the conversion classes have been run, you will need to:
 
-  Scenario: Successful login
-    Given User is on the login page
-    When User enters username "testuser" and password "password123"
-    Then User should be logged in successfully
-Step 4: Running Java Program to Export to Katalon Studio
-Write a Java Program: Create a Java program that converts your existing Selenium objects, step definitions, and feature files to Katalon Studio-compatible formats.
-java
-Copy code
-import java.io.*;
-
-public class ExportToKatalon {
-    public static void main(String[] args) {
-        try {
-            // Example of converting feature file into Katalon Studio test case
-            String featureFilePath = "src/test/resources/login.feature";
-            File featureFile = new File(featureFilePath);
-            if (featureFile.exists()) {
-                // Logic to convert feature file into Katalon test case
-                System.out.println("Feature file found: " + featureFilePath);
-                // Add your logic here to export to Katalon Studio
-            } else {
-                System.out.println("Feature file does not exist.");
-            }
-
-            // Export Selenium Page Object (LoginPage.java) and Step Definitions to Katalon Studio format
-            // Here, you can use Katalon's API or manual export method for object and step definitions
-            System.out.println("Conversion completed!");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-}
-Exporting the Feature Files: After running this Java program, manually import the generated feature files, page objects, and step definitions into Katalon Studio:
-Go to Katalon Studio and create a new Test Case or Test Object.
-Import the *.feature files and *.java files (Selenium step definitions and page objects).
+Import the converted test cases, test objects, and step definitions into your Katalon Studio project. You can do this by:
+Going to Katalon Studio.
+Clicking File > Import and selecting the appropriate files to import into your project.
 Step 5: Running Tests in Katalon Studio
-Once you’ve imported the converted files into Katalon Studio, you can run the tests by following these steps:
+Once the files are successfully imported:
 
-Import Cucumber Plugin (if not already installed):
-
-Go to Katalon Studio > Preferences > Katalon > Plugins and install the Cucumber plugin.
-Run Test Cases:
-
-Select the feature file or test case.
+Navigate to Test Cases in Katalon Studio.
+Select the converted test case (e.g., LoginTestCase).
 Click Run to execute the tests.
-Conclusion
-You have successfully converted your Selenium test automation framework (with BDD, step definitions, and feature files) into Katalon Studio tests using a Java program. Now, you can run and manage your tests more efficiently within Katalon Studio's test management environment.
+Example Workflow
+Source Files:
 
-This guide covers all the necessary steps to convert your Selenium framework to Katalon Studio. You can further customize the Java program for more complex conversions or integrations as needed.
+login.feature (located in src/test/resources/).
+LoginPage.java (located in src/main/java/).
+LoginSteps.java (located in src/test/java/).
+Run the following classes:
+
+FeatureFileConverter — Converts login.feature into a Katalon test case.
+ObjectsConverter — Converts LoginPage.java into a Katalon test object.
+StepDefinitionsConverter — Converts LoginSteps.java into Katalon step definitions.
+Output:
+
+A new Katalon test case for the login feature.
+A new Katalon test object for the login page.
+Step definitions for the login steps.
+Conclusion
+By running the FeatureFileConverter, ObjectsConverter, and StepDefinitionsConverter classes, you can quickly migrate your existing Selenium BDD tests to Katalon Studio without having to manually re-create your test cases, page objects, and step definitions. This approach saves time and ensures seamless integration into Katalon Studio's test management environment.
