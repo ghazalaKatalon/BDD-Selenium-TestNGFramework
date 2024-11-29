@@ -14,12 +14,12 @@ public class ObjectsConverter {
 	    public static void main(String[] args) {
 	        System.out.println("Starting Conversion");
 
-	        String inputFile = "/Users/ghazalashahin/Documents/acc/new/src/test/java/Pages/DashboardPage.java";
+	        String inputFile = "/Users/ghazalashahin/Documents/AIBLatest/src/test/java/Pages/DashboardPage.java";
 	    	
 
 
     		// Path to your Selenium object
-    String outputDir = "/Users/ghazalashahin/Documents/acc/migration/Object Repository";
+    String outputDir = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Object Repository";
 
 	        // Create output directory if it does not exist
 	        try {

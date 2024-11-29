@@ -10,8 +10,8 @@ public class FeatureFileConverter {
 
 	    
 	    public static void main(String[] args) {
-	        String inputFilePath = "/Users/ghazalashahin/Documents/acc/new/src/test/resources/Features/Login.feature";
-	        String outputDirectoryPath = "/Users/ghazalashahin/Documents/acc/migration/Include/features/";
+	        String inputFilePath = "/Users/ghazalashahin/Documents/AIBLatest/src/test/resources/features/Login.feature";
+	        String outputDirectoryPath = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/features/";
 	        
 	        
 	        try {

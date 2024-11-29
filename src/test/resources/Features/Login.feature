@@ -4,5 +4,3 @@ Feature: User Login
     When the user enters valid username and password
     And clicks the login button
     Then the user should be logged in
-
- 

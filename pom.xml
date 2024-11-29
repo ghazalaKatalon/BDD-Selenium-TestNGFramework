@@ -14,7 +14,7 @@
       <version>7.20.1</version>
     </dependency>
 
-    <!-- Cucumber JUnit -->
+    <!-- Cucumber JUnit (Optional, can be removed if using TestNG exclusively) -->
     <dependency>
       <groupId>io.cucumber</groupId>
       <artifactId>cucumber-junit</artifactId>
@@ -37,6 +37,15 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- Cucumber TestNG -->
+<dependency>
+    <groupId>io.cucumber</groupId>
+    <artifactId>cucumber-testng</artifactId>
+    <version>7.20.1</version> <!-- Use the latest stable version -->
+    <scope>test</scope>
+</dependency>
+
+
     <!-- SLF4J API -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -44,11 +53,12 @@
       <version>2.0.9</version>
     </dependency>
 
-    <!-- Logback for SLF4J -->
+    <!-- Logback for SLF4J (Logging implementation) -->
     <dependency>
       <groupId>ch.qos.logback</groupId>
       <artifactId>logback-classic</artifactId>
       <version>1.4.11</version>
     </dependency>
+
   </dependencies>
 </project>
