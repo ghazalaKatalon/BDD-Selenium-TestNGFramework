@@ -86,7 +86,9 @@ public class KatalonSetup {
                 WebUI.navigateToUrl(GlobalVariable.url)
 
                 WebUI.waitForPageLoad(1000)
+                WebUI.maximizeWindow()
                 """;
+        	 
     }
 
     private static String generateTestCaseXML() {

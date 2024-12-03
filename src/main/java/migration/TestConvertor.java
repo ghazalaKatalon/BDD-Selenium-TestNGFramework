@@ -118,9 +118,26 @@ public class TestConvertor {
 
         // Regex for WebElements and associated actions
         Pattern elementPattern = Pattern.compile("(\\w+)\\s*=\\s*driver\\.findElement\\(By\\.(\\w+)\\(\"([^\"]+)\"\\)\\);");
-        Pattern actionPattern = Pattern.compile("(\\w+)\\.(sendKeys|click|isDisplayed)\\(([^)]*)\\);");
+  
+        Pattern actionPattern = Pattern.compile("(\\w+)\\.(sendKeys|click|clear|isDisplayed)\\(([^)]*)\\);");
+
         Pattern conditionPattern = Pattern.compile("(if|while)\\s*\\(([^)]+\\.isDisplayed\\(\\))\\)\\s*\\{");
         Pattern printPattern = Pattern.compile("System\\.out\\.println\\(\"([^\"]+)\"\\);");
+        
+     // Pattern for verifyElementPresent using size() check
+        Pattern verifyElementPresentPattern = Pattern.compile("driver\\.findElements\\(By\\.(\\w+)\\(\"([^\"]+)\"\\)\\)\\.size\\(\\)\\s*>\\s*0;");
+
+        // Pattern for waitFor presence of an element
+        Pattern waitForPresencePattern = Pattern.compile("new WebDriverWait\\(driver, Duration\\.ofSeconds\\((\\d+)\\)\\)\\.until\\(ExpectedConditions\\.presenceOfElementLocated\\(By\\.(\\w+)\\(\"([^\"]+)\"\\)\\)\\);");
+
+        // Pattern for waitFor visibility of an element
+        Pattern waitForVisibilityPattern = Pattern.compile("new WebDriverWait\\(driver, Duration\\.ofSeconds\\((\\d+)\\)\\)\\.until\\(ExpectedConditions\\.visibilityOfElementLocated\\(By\\.(\\w+)\\(\"([^\"]+)\"\\)\\)\\);");
+        
+        // Patterns for matching different parts of the Selenium code
+        Pattern backPattern = Pattern.compile("driver\\.navigate\\(\\)\\.back\\(\\);");
+        Pattern closeBrowserPattern = Pattern.compile("driver\\.quit\\(\\);");
+        Pattern forwardPattern = Pattern.compile("driver\\.navigate\\(\\)\\.forward\\(\\);");
+        Pattern mouseOverPattern = Pattern.compile("Actions\\s+actions\\s*=\\s*new\\s*Actions\\(driver\\);\\s*actions\\.moveToElement\\(driver\\.findElement\\(By\\.xpath\\('([^']+)'\\)\\)\\)\\.perform\\(\\);");
 
         // Process each line of the Selenium code
         String[] lines = seleniumCode.split("\n");
@@ -154,6 +171,11 @@ public class TestConvertor {
                     // Ensure the action uses 'findTestObject' for the object name
                     katalonCode.append(String.format("WebUI.click(findTestObject('%s'))\n", variableName));
                 }
+                
+             else if ("clear".equals(action)) {
+                // Handle the 'clear' action
+                katalonCode.append(String.format("WebUI.clearText(findTestObject('%s'))\n", variableName));
+            } 
                 continue;
             }
 
@@ -171,13 +193,75 @@ public class TestConvertor {
                 katalonCode.append(String.format("println('%s')\n", printMatcher.group(1)));
                 continue;
             }
+        
+        
+        // Handle verifyElementPresent using size() check
+        
+        Matcher verifyElementMatcher = verifyElementPresentPattern.matcher(line);
+        if (verifyElementMatcher.find()) {
+            String byType = verifyElementMatcher.group(1);  // Locator type (e.g., "xpath")
+            String locator = verifyElementMatcher.group(2); // Locator value
+            katalonCode.append(String.format("WebUI.verifyElementPresent(findTestObject('%s'), 1000)\n", locator));
+            continue;
         }
-        return katalonCode.toString();
+
+        // Handle waitFor presence of an element
+        Matcher waitForPresenceMatcher = waitForPresencePattern.matcher(line);
+        if (waitForPresenceMatcher.find()) {
+            String duration = waitForPresenceMatcher.group(1); // Duration in seconds
+            String byType = waitForPresenceMatcher.group(2);  // Locator type (e.g., xpath)
+            String locator = waitForPresenceMatcher.group(3); // Locator value
+            katalonCode.append(String.format("new WebDriverWait(driver, Duration.ofSeconds(%s)).until(ExpectedConditions.presenceOfElementLocated(By.%s(\"%s\")))\n", duration, byType, locator));
+            continue;
+        }
+
+        // Handle waitFor visibility of an element
+        Matcher waitForVisibilityMatcher = waitForVisibilityPattern.matcher(line);
+        if (waitForVisibilityMatcher.find()) {
+            String duration = waitForVisibilityMatcher.group(1); // Duration in seconds
+            String byType = waitForVisibilityMatcher.group(2);  // Locator type (e.g., xpath)
+            String locator = waitForVisibilityMatcher.group(3); // Locator value
+            katalonCode.append(String.format("new WebDriverWait(driver, Duration.ofSeconds(%s)).until(ExpectedConditions.visibilityOfElementLocated(By.%s(\"%s\")))\n", duration, byType, locator));
+            continue;
+        }
+        
+        // Handle Selenium's driver.navigate().back()
+        Matcher backMatcher = backPattern.matcher(line);
+        if (backMatcher.find()) {
+            katalonCode.append("WebUI.back(FailureHandling.STOP_ON_FAILURE);\n");
+            continue;
+        }
+
+        // Handle Selenium's driver.quit()
+        Matcher closeBrowserMatcher = closeBrowserPattern.matcher(line);
+        if (closeBrowserMatcher.find()) {
+            katalonCode.append("WebUI.closeBrowser();\n");
+            continue;
+        }
+
+        // Handle Selenium's driver.navigate().forward()
+        Matcher forwardMatcher = forwardPattern.matcher(line);
+        if (forwardMatcher.find()) {
+            katalonCode.append("WebUI.forward(FailureHandling.STOP_ON_FAILURE);\n");
+            continue;
+        }
+
+        // Handle Selenium's Actions class mouse hover (moveToElement)
+        Matcher mouseOverMatcher = mouseOverPattern.matcher(line);
+        if (mouseOverMatcher.find()) {
+            String objectLocator = mouseOverMatcher.group(1);  // Extract the XPath
+            katalonCode.append(String.format(
+                    "WebUI.mouseOver(findTestObject('%s'));\n",
+                    objectLocator));  // Use the object locator to find the TestObject in Katalon
+            continue;
+        }
+    
     }
 
-    // Generate the content for the .tc file
+        
 
-
+    return katalonCode.toString();
+    }
     // Generate the content for the .tc file
     private static String generateTcFileContent(String className) {
         String uuid = UUID.randomUUID().toString();
