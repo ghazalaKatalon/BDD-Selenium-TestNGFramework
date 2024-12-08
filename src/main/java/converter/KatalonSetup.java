@@ -1,4 +1,4 @@
-package migration;
+package converter;
 
 import java.io.*;
 import java.nio.file.*;
@@ -91,19 +91,7 @@ public class KatalonSetup {
         	 
     }
 
-    private static String generateTestCaseXML() {
-      /*  String uuid = UUID.randomUUID().toString();
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-               "<TestCaseEntity>\n" +
-               "   <description></description>\n" +
-               "   <name>test</name>\n" +
-               "   <tag></tag>\n" +
-               "   <comment></comment>\n" +
-               "   <recordOption>OTHER</recordOption>\n" +
-               "   <testCaseGuid>" + uuid + "</testCaseGuid>\n" +
-               "</TestCaseEntity>\n";*/
-        
-        
+    private static String generateTestCaseXML() {     
         String uuid = UUID.randomUUID().toString();
         return String.format("""
             <?xml version="1.0" encoding="UTF-8"?>

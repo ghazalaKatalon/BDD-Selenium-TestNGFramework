@@ -1,4 +1,4 @@
-package migration;
+package converter;
 
 
 
@@ -7,7 +7,7 @@ import java.nio.file.*;
 import java.util.UUID;
 import java.util.regex.*;
 
-public class ObjectsConverter {
+public class ObjectsConverterB {
 
 
 

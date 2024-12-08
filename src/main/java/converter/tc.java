@@ -1,60 +1,52 @@
-package migration;
+package converter;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.regex.*;
-import java.util.UUID;
 
-public class TestConvertor {
+public class tc {
     public static void main(String[] args) {
-        // Input Selenium file and output Katalon file paths
         String inputFilePath = "/Users/ghazalashahin/Documents/AIBLatest/src/test/java/StepDefinitions/LoginStep.java";
         String mainDirectoryPath = "/Users/ghazalashahin/Documents/AIBLatest/Demo/";
-        String objectFilePath = "/Users/ghazalashahin/Documents/AIBLatest/src/test/java/Pages/DashboardPage.java"; // Object file
+        String objectFilePath = "/Users/ghazalashahin/Documents/AIBLatest/src/test/java/Pages/DashboardPage.java";
 
         try {
-            // Process the input file
             File inputFile = new File(inputFilePath);
             String className = inputFile.getName().replace(".java", "");
             System.out.println("Processing: " + inputFile.getName());
 
-            // Read the Selenium code from the file
             String seleniumCode = readFromFile(inputFile.getAbsolutePath());
+            Map<String, String> objectMap = readObjectFile(objectFilePath);
 
-            // Read the object file to get the element names
-            Map<String, String> objectMap = readObjectFile(objectFilePath); // Load object map
+            List<TestStep> steps = extractGherkinSteps(seleniumCode);
 
-            // Convert the Selenium code to Katalon Studio code
-            String katalonCode = convertToKatalon(seleniumCode, objectMap);
+            for (TestStep step : steps) {
+                String katalonCode = convertToKatalon(step.getMethodBody(), objectMap);
 
-            // Create the Scripts folder and className subfolder
-            Path scriptsFolderPath = Paths.get(mainDirectoryPath, "Scripts", className);
-            Files.createDirectories(scriptsFolderPath);
+                // Create directories for scripts
+                Path scriptsFolderPath = Paths.get(mainDirectoryPath, "Scripts", step.getMethodName());
+                Files.createDirectories(scriptsFolderPath);
 
-            // Generate a dynamic filename for the Groovy script
-            String dynamicNumber = String.valueOf(System.currentTimeMillis());
-            String groovyFileName = "Script" + dynamicNumber + ".groovy";
-            Path groovyFilePath = scriptsFolderPath.resolve(groovyFileName);
+                String groovyFileName = "Script" + System.currentTimeMillis() + ".groovy";
+                Path groovyFilePath = scriptsFolderPath.resolve(groovyFileName);
+                writeToFile(groovyFilePath.toString(), katalonCode);
 
-            // Write the Groovy script
-            writeToFile(groovyFilePath.toString(), katalonCode);
+                // Create .tc files
+                Path tcFilePath = Paths.get(mainDirectoryPath, "Test Cases", step.getMethodName() + ".tc");
+                String tcFileContent = generateTcFileContent(step.getMethodName());
+                Files.createDirectories(tcFilePath.getParent());
+                writeToFile(tcFilePath.toString(), tcFileContent);
 
-            // Create the .tc file in the output directory
-            Path tcFilePath = Paths.get(mainDirectoryPath, "Test Cases", className + ".tc");
-            String tcFileContent = generateTcFileContent(className);
-            Files.createDirectories(tcFilePath.getParent()); // Ensure the parent folder exists
-            writeToFile(tcFilePath.toString(), tcFileContent);
+                System.out.println("Step converted: " + step.getMethodName());
+            }
 
             System.out.println("Conversion complete.");
-            System.out.println("Katalon test case saved at: " + groovyFilePath);
-            System.out.println(".tc file saved at: " + tcFilePath);
         } catch (IOException e) {
             System.err.println("An error occurred: " + e.getMessage());
         }
     }
 
-    // Read the contents of the file into a string
     private static String readFromFile(String filePath) throws IOException {
         StringBuilder content = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
@@ -66,60 +58,70 @@ public class TestConvertor {
         return content.toString();
     }
 
-    // Write the contents to a file
     private static void writeToFile(String filePath, String content) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write(content);
         }
     }
 
-    // Read the object file and create a map of object names to locators
     private static Map<String, String> readObjectFile(String objectFilePath) throws IOException {
         Map<String, String> objectMap = new HashMap<>();
-        Pattern pattern = Pattern.compile("public By (\\w+) = By\\.(\\w+)\\(\"([^\"]+)\"\\);");
+        Pattern pattern = Pattern.compile("public By (\\w+) = By\\.(\\w+)\\(\\\"([^\\\"]+)\\\"\\);");
 
         String objectCode = readFromFile(objectFilePath);
         Matcher matcher = pattern.matcher(objectCode);
 
         while (matcher.find()) {
             String objectName = matcher.group(1);
-            String locatorValue = matcher.group(3); // Only the locator value
-
-            // Add object name to map with its locator value
+            String locatorValue = matcher.group(3);
             objectMap.put(objectName, locatorValue);
         }
+
         return objectMap;
     }
 
-    // Convert Selenium code to Katalon Studio Groovy test case
+    private static List<TestStep> extractGherkinSteps(String seleniumCode) {
+        List<TestStep> steps = new ArrayList<>();    
+        Pattern pattern = Pattern.compile(
+        	    "@(Given|When|Then)\\(\"([^\"]+)\"\\)\\s*public\\s+void\\s+(\\w+)\\(.*?\\)\\s*\\{([\\s\\S]*?)\\}",
+        	    Pattern.MULTILINE // This can be added if your input contains multiple lines
+        	);
+
+        	Matcher matcher = pattern.matcher(seleniumCode);
+
+        	while (matcher.find()) {
+        	    // Extract the annotation type (Given/When/Then)
+        	    String annotation = matcher.group(1);
+        	    
+        	    // Extract the step description from the annotation
+        	    String stepDescription = matcher.group(2);
+        	    
+        	    // Extract the method name
+        	    String methodName = matcher.group(3);
+        	    
+        	    // Extract the method body
+        	    String methodBody = matcher.group(4).trim(); // Trim to remove any extra leading/trailing spaces
+
+        	    // Add this information to the list of steps
+        	    steps.add(new TestStep(annotation, stepDescription, methodName, methodBody));
+        	}
+
+        return steps;
+    }
+
     private static String convertToKatalon(String seleniumCode, Map<String, String> objectMap) {
         StringBuilder katalonCode = new StringBuilder();
 
         // Add the necessary static imports for Katalon Studio
         katalonCode.append("""
-            import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
-            import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
-            import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
             import static com.kms.katalon.core.testobject.ObjectRepository.findTestObject
-            import static com.kms.katalon.core.testobject.ObjectRepository.findWindowsObject
-            import com.kms.katalon.core.checkpoint.Checkpoint as Checkpoint
-            import com.kms.katalon.core.cucumber.keyword.CucumberBuiltinKeywords as CucumberKW
-            import com.kms.katalon.core.mobile.keyword.MobileBuiltInKeywords as Mobile
-            import com.kms.katalon.core.model.FailureHandling as FailureHandling
-            import com.kms.katalon.core.testcase.TestCase as TestCase
-            import com.kms.katalon.core.testdata.TestData as TestData
-            import com.kms.katalon.core.testng.keyword.TestNGBuiltinKeywords as TestNGKW
-            import com.kms.katalon.core.testobject.TestObject as TestObject
-            import com.kms.katalon.core.webservice.keyword.WSBuiltInKeywords as WS
             import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
-            import com.kms.katalon.core.windows.keyword.WindowsBuiltinKeywords as Windows
             import internal.GlobalVariable as GlobalVariable
         """);
 
-        // Regex for WebElements and associated actions
         Pattern elementPattern = Pattern.compile("(\\w+)\\s*=\\s*driver\\.findElement\\(By\\.(\\w+)\\(\"([^\"]+)\"\\)\\);");
-  
-        Pattern actionPattern = Pattern.compile("(\\w+)\\.(sendKeys|click|clear|isDisplayed)\\(([^)]*)\\);");
+        
+        Pattern actionPattern = Pattern.compile("(\\w+)\\.(sendKeys|click|clear|isDisplayed|get)\\(([^)]*)\\);");
 
         Pattern conditionPattern = Pattern.compile("(if|while)\\s*\\(([^)]+\\.isDisplayed\\(\\))\\)\\s*\\{");
         Pattern printPattern = Pattern.compile("System\\.out\\.println\\(\"([^\"]+)\"\\);");
@@ -143,6 +145,29 @@ public class TestConvertor {
         String[] lines = seleniumCode.split("\n");
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i].trim();
+            
+            if (line.trim().startsWith("//")) {
+                continue;  // Skip this line and move to the next
+            }
+
+            boolean inMultiLineComment = false;
+			// Check for multi-line comment start (/*) 
+            if (line.contains("/*") && !inMultiLineComment) {
+                inMultiLineComment = true;  
+                if (line.contains("*/")) {
+                    inMultiLineComment = false; 
+                }
+                continue; 
+            }
+
+    
+            if (inMultiLineComment) {
+           
+                if (line.contains("*/")) {
+                    inMultiLineComment = false;
+                }
+                continue; 
+            }
 
             // Handle WebElement declarations
             Matcher elementMatcher = elementPattern.matcher(line);
@@ -176,6 +201,11 @@ public class TestConvertor {
                 // Handle the 'clear' action
                 katalonCode.append(String.format("WebUI.clearText(findTestObject('%s'))\n", variableName));
             } 
+                
+             else if ("get".equals(action)) {
+            	 katalonCode.append("WebUI.openBrowser('')\n");
+            	 katalonCode.append("WebUI.navigateToUrl(GlobalVariable.url)\n");
+             } 
                 continue;
             }
 
@@ -262,19 +292,46 @@ public class TestConvertor {
 
     return katalonCode.toString();
     }
-    // Generate the content for the .tc file
-    private static String generateTcFileContent(String className) {
+
+    private static String generateTcFileContent(String methodName) {
         String uuid = UUID.randomUUID().toString();
         return String.format("""
             <?xml version="1.0" encoding="UTF-8"?>
             <TestCaseEntity>
                <description></description>
                <name>%s</name>
-               <tag></tag>
-               <comment></comment>
-               <recordOption>OTHER</recordOption>
                <testCaseGuid>%s</testCaseGuid>
             </TestCaseEntity>
-            """, className, uuid);
+            """, methodName, uuid);
+    }
+
+    static class TestStep {
+        private final String annotation;
+        private final String description;
+        private final String methodName;
+        private final String methodBody;
+
+        public TestStep(String annotation, String description, String methodName, String methodBody) {
+            this.annotation = annotation;
+            this.description = description;
+            this.methodName = methodName;
+            this.methodBody = methodBody;
+        }
+
+        public String getAnnotation() {
+            return annotation;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public String getMethodName() {
+            return methodName;
+        }
+
+        public String getMethodBody() {
+            return methodBody;
+        }
     }
 }

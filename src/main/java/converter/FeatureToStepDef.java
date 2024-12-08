@@ -1,4 +1,5 @@
-package migration;
+package converter;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.regex.*;
@@ -6,31 +7,37 @@ import java.util.regex.*;
 public class FeatureToStepDef {
 
     public static void main(String[] args) {
-        // Input feature file path
-        String inputPath = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/features/Login.feature";
+        // Input directory containing feature files
+        String inputDirectory = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/features/AIB";
 
-        // Output directory for step definition
-        String outputDirectory = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/scripts/groovy/common/";
+        // Output directory for step definitions
+        String outputDirectory = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/scripts/groovy/";
 
         try {
-            // Extract feature file name without extension
-            String featureFileName = Paths.get(inputPath).getFileName().toString();
-            String featureName = featureFileName.replace(".feature", "");
+            // Get all .feature files in the input directory
+            DirectoryStream<Path> featureFiles = Files.newDirectoryStream(Paths.get(inputDirectory), "Login.feature");
 
-            // Read feature file content
-            String featureContent = Files.readString(Paths.get(inputPath));
+            for (Path featureFile : featureFiles) {
+                // Extract feature file name without extension
+                String featureFileName = featureFile.getFileName().toString();
+                String featureName = featureFileName.replace(".feature", "");
 
-            // Generate step definition content
-            String stepDefContent = generateStepDefinition(featureContent, featureName);
+                // Read feature file content
+                String featureContent = Files.readString(featureFile);
 
-            // Ensure the output directory exists
-            Files.createDirectories(Paths.get(outputDirectory));
+                // Generate step definition content
+                String stepDefContent = generateStepDefinition(featureContent, featureName);
 
-            // Save step definition file
-            String outputPath = outputDirectory + featureName + ".groovy";
-            Files.writeString(Paths.get(outputPath), stepDefContent);
+                // Ensure the output directory exists
+                Files.createDirectories(Paths.get(outputDirectory));
 
-            System.out.println("Step definition created at: " + outputPath);
+                // Save step definition file
+                String outputPath = outputDirectory + featureName + ".groovy";
+                Files.writeString(Paths.get(outputPath), stepDefContent);
+
+                System.out.println("Step definition created for: " + featureFileName);
+                System.out.println("Step definition saved at: " + outputPath);
+            }
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -42,7 +49,7 @@ public class FeatureToStepDef {
 
         // Add package and imports
         groovyContent.append("""
-                package common
+                package operations
                 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
                 import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
                 import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
@@ -103,12 +110,12 @@ public class FeatureToStepDef {
             // Generate method name by replacing spaces with underscores and removing special characters
             String methodName = step.replaceAll("\\s+", "_").replaceAll("[^a-zA-Z0-9_]", "");
 
-            // Add method for the step
             groovyContent.append("\n\t@").append(keyword).append("(\"").append(step).append("\")\n")
-                         .append("\tdef ").append(methodName).append("() {\n")
-                         .append("\t\t// TODO: Implement step logic for '").append(step).append("'\n")
-                         .append("\t}\n");
-        }
+            .append("\tdef ").append(methodName).append("() {\n")
+            .append("\t\tWebUI.callTestCase(findTestCase(\"Test Cases/").append(methodName).append("\"), [:], FailureHandling.STOP_ON_FAILURE)\n")
+            .append("\t}\n");
+
+}
 
         // Close the class
         groovyContent.append("}\n");

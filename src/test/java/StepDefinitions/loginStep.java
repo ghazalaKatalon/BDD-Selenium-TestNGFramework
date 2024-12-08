@@ -33,40 +33,30 @@ public class loginStep {
         driver.manage().window().maximize();
     }
 
-    @Given("the user is on the login page")
-    public void the_user_is_on_the_login_page() throws InterruptedException {
-        // Open the login page
-        driver.get("https://www.saucedemo.com/v1/");
-        Thread.sleep(1000);
-        
+   @Given("the user is on the login page")
+    public void the_user_is_on_the_login_page()  {
+       driver.get("https://www.saucedemo.com/v1/"); 
+       new WebDriverWait(driver, Duration.ofSeconds(10)).until(
+    		    ExpectedConditions.presenceOfElementLocated(By.id("user-name"))
+    		);
+
     }
 
     @When("the user enters valid username and password")
-    public void the_user_enters_valid_username_and_password() {
-        // Use the locators from the DashboardPage class
-    	  WebElement usernameField = driver.findElement(dashboardPage.usernameField);
+    public void the_user_enters_valid_username_and_password() { 
+    	  WebElement usernameField = driver.findElement(By.id("user-name"));
           WebElement passwordField = driver.findElement(dashboardPage.passwordField);
-     
-     // Clear the fields
         usernameField.clear();
         passwordField.clear();
-        
-     // enter the data
-        usernameField.sendKeys("standard_user");
+   usernameField.sendKeys("standard_user");
         passwordField.sendKeys("secret_sauce");
     }
 
-    @When("clicks the login button")
+    @Then("clicks the login button")
     public void clicks_the_login_button() {
-        // Use the locator for the login button from DashboardPage
         WebElement loginButton = driver.findElement(dashboardPage.loginButton);
         loginButton.click();
-        try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+      
     }
 
     @Then("the user should be logged in")
@@ -87,23 +77,13 @@ public class loginStep {
         } else {
             throw new AssertionError("Login failed");
         }
-     // Close the browser
-        
-        //testing purpose
-        
-     /*   driver.navigate().back();
-        driver.quit();
-        driver.navigate().forward();
-        WebElement element = driver.findElement(By.xpath("h1"));
-        Actions actions = new Actions(driver);
-        actions.moveToElement(element).perform();*/
     }
-
-    // Quit WebDriver after each test
+      
+ 
     @After
     public void tearDown() {
         if (driver != null) {
-            driver.quit();
+           // driver.quit();
         }
     }
 }
