@@ -7,12 +7,13 @@ public class UpdateListener {
     
     public static void main(String[] args) throws IOException {
         // File paths
-        String javaFilePath = "src/main/java/converter/FeatureFileConverter.java";
-        String katalonDir = "/Users/ghazalashahin/Documents/AIBLatest/Demo";
+    	String javaFilePath = System.getProperty("inputDirectoryPath");
+        javaFilePath = Paths.get(javaFilePath, "/src/main/java/converter/FeatureFileConverter.java").toString();
+        String katalonDir = System.getProperty("katalonDir");
         String groovyFilePath = Paths.get(katalonDir, "Test Listeners", "Listener.groovy").toString();
         
         // Read the project name from the FeatureFileConverter.java
-        String projectName = extractProjectName(javaFilePath);
+        String projectName = System.getProperty("projectName");
         
         if (projectName != null) {
             // Remove trailing slash if it exists

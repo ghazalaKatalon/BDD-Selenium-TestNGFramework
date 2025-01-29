@@ -9,7 +9,7 @@ public class KatalonSetup {
     public static void main(String[] args) {
         try {
             // Define paths
-            String basePath = "/Users/ghazalashahin/Documents/AIBLatest/Demo";
+            String basePath = System.getProperty("inputDirectoryPath");
             String profilesPath = basePath + "/Profiles";
             String scriptsPath = basePath + "/Scripts/setup";
             String testCasesPath = basePath + "/Test Cases";

@@ -7,53 +7,59 @@ import java.util.regex.*;
 public class stepC {
 
     public static void main(String[] args) {
-        // Input directory containing feature files
-        String inputDirectory = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/features/AIB";
+    	String inputDirectory = System.getProperty("katalonDir");
+    	String projectName = System.getProperty("projectName");
 
-        // Output directory for step definitions
-        String outputDirectory = "/Users/ghazalashahin/Documents/AIBLatest/Demo/Include/scripts/groovy/";
+    	if (inputDirectory != null && projectName != null) {
+    	    inputDirectory = Paths.get(inputDirectory, "Include", "features", projectName).toString();
+    	} else {
+    	    throw new IllegalArgumentException("katalonDir or projectName is not set");
+    	}
 
-        // Path to FeatureFileConverter.java to read the package name
-        String converterFilePath = "/Users/ghazalashahin/Documents/AIBLatest/src/main/java/converter/FeatureFileConverter.java";
+    	// Corrected output directory path
+    	String outputDirectory = Paths.get(System.getProperty("katalonDir"), "Include", "scripts", "groovy", projectName).toString();
 
-        try {
-            // Read package name from FeatureFileConverter.java
-            String packageName = extractProjectName(converterFilePath);
-            if (packageName == null) {
-                System.out.println("Package name not found in FeatureFileConverter.java.");
-                return;
-            }
+    	String converterFilePath = System.getProperty("inputDirectoryPath");
+    	converterFilePath = Paths.get(converterFilePath, "src", "main", "java", "converter", "FeatureFileConverter.java").toString();
 
-            // Create the package directory under the groovy folder
-            String packageFolderPath = outputDirectory + packageName;
-            Files.createDirectories(Paths.get(packageFolderPath));
+    	try {
+    	    // Read package name from FeatureFileConverter.java
+    	    String packageName = extractProjectName(converterFilePath);
+    	    if (packageName == null) {
+    	        System.out.println("Package name not found in FeatureFileConverter.java.");
+    	        return;
+    	    }
 
-            // Get all .feature files in the input directory
-            DirectoryStream<Path> featureFiles = Files.newDirectoryStream(Paths.get(inputDirectory), "Login.feature");
+    	    // Create the project package directory under groovy folder
+    	    Files.createDirectories(Paths.get(outputDirectory));
 
-            for (Path featureFile : featureFiles) {
-                // Extract feature file name without extension
-                String featureFileName = featureFile.getFileName().toString();
-                String featureName = featureFileName.replace(".feature", "");
+    	    // Get all .feature files in the input directory
+    	    DirectoryStream<Path> featureFiles = Files.newDirectoryStream(Paths.get(inputDirectory), "Login.feature");
 
-                // Read feature file content
-                String featureContent = Files.readString(featureFile);
+    	    for (Path featureFile : featureFiles) {
+    	        // Extract feature file name without extension
+    	        String featureFileName = featureFile.getFileName().toString();
+    	        String featureName = featureFileName.replace(".feature", "");
 
-                // Generate step definition content
-                String stepDefContent = generateStepDefinition(featureContent, featureName, packageName);
+    	        // Read feature file content
+    	        String featureContent = Files.readString(featureFile);
 
-                // Save step definition file in the package folder
-                String outputPath = packageFolderPath + "/" + featureName + ".groovy";
-                Files.writeString(Paths.get(outputPath), stepDefContent);
+    	        // Generate step definition content
+    	        String stepDefContent = generateStepDefinition(featureContent, featureName, packageName);
 
-                System.out.println("Step definition created for: " + featureFileName);
-                System.out.println("Step definition saved at: " + outputPath);
-            }
+    	        // Save step definition file in the project package folder
+    	        String outputPath = Paths.get(outputDirectory, featureName + ".groovy").toString();
+    	        Files.writeString(Paths.get(outputPath), stepDefContent);
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    	        System.out.println("Step definition created for: " + featureFileName);
+    	        System.out.println("Step definition saved at: " + outputPath);
+    	    }
+
+    	} catch (IOException e) {
+    	    e.printStackTrace();
+    	}
     }
+
 
     // Method to extract the project name from FeatureFileConverter.java
     public static String extractProjectName(String filePath) throws IOException {
@@ -77,13 +83,15 @@ public class stepC {
         return projectName != null ? projectName : null;
     }
 
-    // Method to generate step definitions
     private static String generateStepDefinition(String featureContent, String className, String packageName) {
         StringBuilder groovyContent = new StringBuilder();
 
-        // Add package declaration
-        groovyContent.append("package ").append(packageName.replace("/", "")).append("\n\n");
+        // Get project name or use a default value
+        String PackageName = System.getProperty("projectName", "defaultPackage");
+        System.out.println("Using package name: " + PackageName);  // Debugging
 
+        // Add package declaration
+        groovyContent.append("package ").append(PackageName).append("\n\n");
         // Add imports
         groovyContent.append("""
                 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint

@@ -35,7 +35,9 @@ public class FeatureFileConverter {
             }
 
             // Step 2: Ensure the ProjectFolder and output directory exist
-            String projectFolderPath = outputDirectoryPath + "/aib/";
+           
+            String projectName = System.getProperty("projectName");
+            String projectFolderPath = outputDirectoryPath + "/" + projectName + "/";
             Files.createDirectories(Paths.get(projectFolderPath));
 
             // Step 3: Process each .feature file
