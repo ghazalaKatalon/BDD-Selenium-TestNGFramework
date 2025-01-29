@@ -10,14 +10,14 @@ import converter.ObjectsConverter;
 import converter.TestConvertor;
 import converter.UpdateListener;
 
-public class MigrateSeToKa {
+public class MigrateSEToKA {
 
     private String inputDirectoryPath;
     private String katalonDir;
 
     public static void main(String[] args) {
         // Instantiate the MigrationExecutor object
-        MigrateSeToKa executor = new MigrateSeToKa();
+        MigrateSEToKA executor = new MigrateSEToKA();
         
         // Call the method to show the UI for input and output directories
         executor.showDirectoryInputDialog();
@@ -93,11 +93,16 @@ public class MigrateSeToKa {
 
     // Method to execute the migration classes
     private void executeMigrationClasses() {
-        //KatalonSetup.main(new String[]{});
+        KatalonSetup.main(new String[]{});
 		   ObjectsConverter.main(new String[]{});
 		   FeatureFileConverter.main(new String[]{});
 		  TestConvertor.main(new String[]{});
-		   //stepC.main(new String[]{});
-		  // UpdateListener.main(new String[]{});
+		   stepC.main(new String[]{});
+		  try {
+			UpdateListener.main(new String[]{});
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
        }
    }
