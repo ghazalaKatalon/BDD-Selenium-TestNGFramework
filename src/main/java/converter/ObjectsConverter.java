@@ -2,23 +2,28 @@ package converter;
 
 import java.io.*;
 import java.nio.file.*;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.*;
 import java.util.stream.Stream;
+import javax.swing.*;
 
 public class ObjectsConverter {
 
     public static void main(String[] args) {
+
         System.out.println("Starting Conversion");
 
-        // Input directory containing Java files to process
-        String inputDirectoryPath = "src/test/java/";
+        String inputDirectoryPath = System.getProperty("inputDirectoryPath");
+        inputDirectoryPath = Paths.get(inputDirectoryPath, "src", "test","java").toString();
+        String katalonDir = System.getProperty("katalonDir");
 
-        // Katalon directory where the output will be saved
-        String katalonDir = "/Users/ghazalashahin/Documents/AIBLatest/Demo";
-       
+        if (inputDirectoryPath == null || katalonDir == null) {
+            System.out.println("Directories not provided. Exiting program.");
+            System.exit(0);
+        }
+
         String projectFolderPath = Paths.get(katalonDir, "Object Repository").toString();
-        
+
         // Create the project folder if it does not exist
         try {
             Files.createDirectories(Paths.get(projectFolderPath));
@@ -46,61 +51,34 @@ public class ObjectsConverter {
             // Read the file content
             String data = new String(Files.readAllBytes(inputFilePath));
 
-            // Updated regex to match multiple locator types (xpath, name, id, cssSelector, className, linkText, partialLinkText, tagName)
-            Pattern pattern = Pattern.compile(
-                    "public\\s+By\\s+(\\w+)\\s*=\\s*By\\.(name|id|xpath|cssSelector|className|linkText|partialLinkText|tagName)\\([\"'](.+?)[\"']\\)\\s*;"
+            // Match any usage of By locators
+            Pattern byLocatorPattern = Pattern.compile(
+                "(?:private|public)?\\s*By\\s+(\\w+)\\s*=\\s*By\\.(id|name|xpath|cssSelector|className|linkText|partialLinkText|tagName)\\([\\\"'](.+?)[\\\"']\\)\\s*;"
             );
-            Matcher matcher = pattern.matcher(data);
 
-            while (matcher.find()) {
-                String elementName = matcher.group(1);
-                String locatorType = matcher.group(2);
-                String locatorValue = matcher.group(3);
-                String guid = UUID.randomUUID().toString();
+            // Match inline driver.findElement(By.*)
+            Pattern inlineByPattern = Pattern.compile(
+                "driver\\.findElement\\(By\\.(id|name|xpath|cssSelector|className|linkText|partialLinkText|tagName)\\([\\\"'](.+?)[\\\"']\\)\\)"
+            );
 
-                // Convert locator type to a valid Katalon XML structure with XPATH
-                String katalonObjectXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                        "<WebElementEntity>\n" +
-                        "   <description></description>\n" +
-                        "   <name>" + elementName + "</name>\n" +
-                        "   <tag></tag>\n" +
-                        "   <elementGuidId>" + guid + "</elementGuidId>\n" +
-                        "   <selectorCollection>\n";
+            Matcher byLocatorMatcher = byLocatorPattern.matcher(data);
+            Matcher inlineByMatcher = inlineByPattern.matcher(data);
 
-                // Generate XPath value based on the locator type
-                String xpathValue = generateXpathFromLocator(locatorValue, locatorType);
-                katalonObjectXML +=
-                        "      <entry>\n" +
-                        "         <key>XPATH</key>\n" +
-                        "         <value>" + xpathValue + "</value>\n" +
-                        "      </entry>\n";
+            // Process `By` locators
+            while (byLocatorMatcher.find()) {
+                String elementName = byLocatorMatcher.group(1);
+                String locatorType = byLocatorMatcher.group(2);
+                String locatorValue = byLocatorMatcher.group(3);
+                generateAndSaveKatalonObject(elementName, locatorType, locatorValue, projectFolderPath);
+            }
 
-                katalonObjectXML +=
-                        "   </selectorCollection>\n" +
-                        "   <selectorMethod>XPATH</selectorMethod>\n" +
-                        "   <smartLocatorCollection>\n" +
-                        "      <entry>\n" +
-                        "         <key>SMART_LOCATOR</key>\n" +
-                        "         <value>internal:attr=[placeholder=&quot;Username&quot;i]</value>\n" +
-                        "      </entry>\n" +
-                        "   </smartLocatorCollection>\n" +
-                        "   <smartLocatorEnabled>false</smartLocatorEnabled>\n" +
-                        "   <useRalativeImagePath>true</useRalativeImagePath>\n" +
-                        "   <webElementProperties>\n" +
-                        "      <isSelected>false</isSelected>\n" +
-                        "      <matchCondition>equals</matchCondition>\n" +
-                        "      <name>tag</name>\n" +
-                        "      <type>Main</type>\n" +
-                        "      <value>input</value>\n" +
-                        "      <webElementGuid>" + UUID.randomUUID().toString() + "</webElementGuid>\n" +
-                        "   </webElementProperties>\n";
-
-                katalonObjectXML += "</WebElementEntity>";
-
-                // Save the Katalon object to the output directory
-                Path outputFilePath = Paths.get(projectFolderPath, elementName + ".rs");
-                Files.write(outputFilePath, katalonObjectXML.getBytes());
-                System.out.println("Generated: " + outputFilePath);
+            // Process inline `By` locators
+            int inlineCount = 0;
+            while (inlineByMatcher.find()) {
+                String locatorType = inlineByMatcher.group(1);
+                String locatorValue = inlineByMatcher.group(2);
+                String elementName = "InlineElement" + (++inlineCount);
+                generateAndSaveKatalonObject(elementName, locatorType, locatorValue, projectFolderPath);
             }
         } catch (IOException e) {
             System.err.println("Error processing file: " + inputFilePath + " - " + e.getMessage());
@@ -108,20 +86,71 @@ public class ObjectsConverter {
     }
 
     /**
-     * Generate an XPath locator based on other locator types if XPath is not the primary locator.
+     * Generates a Katalon object XML file and saves it to the specified directory.
+     */
+    private static void generateAndSaveKatalonObject(String elementName, String locatorType, String locatorValue, String projectFolderPath) {
+        String guid = UUID.randomUUID().toString();
+        String katalonObjectXML = generateKatalonObjectXML(elementName, locatorType, locatorValue, guid);
+
+        // Save the Katalon object XML
+        Path outputFilePath = Paths.get(projectFolderPath, elementName + ".rs");
+        try {
+            Files.write(outputFilePath, katalonObjectXML.getBytes());
+            System.out.println("Generated: " + outputFilePath);
+        } catch (IOException e) {
+            System.err.println("Error writing Katalon object: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generates the XML structure for a Katalon object.
+     */
+    private static String generateKatalonObjectXML(String elementName, String locatorType, String locatorValue, String guid) {
+        locatorValue = escapeXml(locatorValue);
+
+        String xpathValue = locatorType.equals("xpath") ? locatorValue : generateXpathFromLocator(locatorValue, locatorType);
+
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+               "<WebElementEntity>\n" +
+               "   <description></description>\n" +
+               "   <name>" + elementName + "</name>\n" +
+               "   <tag></tag>\n" +
+               "   <elementGuidId>" + guid + "</elementGuidId>\n" +
+               "   <selectorCollection>\n" +
+               "      <entry>\n" +
+               "         <key>XPATH</key>\n" +
+               "         <value>" + xpathValue + "</value>\n" +
+               "      </entry>\n" +
+               "   </selectorCollection>\n" +
+               "   <selectorMethod>XPATH</selectorMethod>\n" +
+               "   <useRalativeImagePath>true</useRalativeImagePath>\n" +
+               "</WebElementEntity>";
+    }
+
+    /**
+     * Escapes special XML characters.
+     */
+    private static String escapeXml(String value) {
+        return value.replace("&", "&amp;")
+                    .replace("\"", "&quot;")
+                    .replace("'", "&apos;")
+                    .replace("<", "&lt;")
+                    .replace(">", "&gt;");
+    }
+
+    /**
+     * Generates an XPath from other locator types if XPath is not directly given.
      */
     private static String generateXpathFromLocator(String locatorValue, String locatorType) {
         switch (locatorType) {
-            case "name":
-                return "//input[@name='" + locatorValue + "']";
             case "id":
                 return "//*[@id='" + locatorValue + "']";
+            case "name":
+                return "//input[@name='" + locatorValue + "']";
             case "className":
-                return "//*[@class='" + locatorValue + "']";
+                return "//*[contains(@class, '" + locatorValue + "')]";
             case "cssSelector":
-                return locatorValue; // Directly use the CSS selector if given
-            case "xpath":
-                return locatorValue; // Already in XPATH format
+                return locatorValue;
             case "linkText":
                 return "//a[text()='" + locatorValue + "']";
             case "partialLinkText":
@@ -129,15 +158,7 @@ public class ObjectsConverter {
             case "tagName":
                 return "//" + locatorValue;
             default:
-                return null;
+                return locatorValue;
         }
-    }
-
-    private static String escapeXml(String locatorValue) {
-        return locatorValue.replace("&", "&amp;")
-                           .replace("\"", "&quot;")
-                           .replace("'", "&apos;")
-                           .replace("<", "&lt;")
-                           .replace(">", "&gt;");
     }
 }

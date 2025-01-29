@@ -6,8 +6,17 @@ import java.util.*;
 
 public class FeatureFileConverter {
     public static void main(String[] args) {
-        String inputDirectoryPath = "src/test/resources/features/";
-        String katalonDir = "/Users/ghazalashahin/Documents/AIBLatest/Demo";
+    	 String inputDirectoryPath = System.getProperty("inputDirectoryPath");
+    	 inputDirectoryPath = Paths.get(inputDirectoryPath, "src", "test","resources", "features").toString();
+         String katalonDir = System.getProperty("katalonDir");
+
+         if (inputDirectoryPath == null || katalonDir == null) {
+             System.out.println("Directories not provided. Exiting program.");
+             System.exit(0);
+         }
+
+       
+
         String outputDirectoryPath = Paths.get(katalonDir, "Include", "features").toString();
 
         try {

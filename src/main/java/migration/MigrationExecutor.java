@@ -3,7 +3,8 @@ package migration;
 import java.io.IOException;
 
 import converter.FeatureFileConverter;
-import converter.FeatureToStepDef;
+//import converter.FeatureToStepDef;
+import converter.stepC;
 import converter.KatalonSetup;
 import converter.ObjectsConverter;
 import converter.TestConvertor;
@@ -14,16 +15,17 @@ public class MigrationExecutor {
 
     public static void main(String[] args) {
     	
-    	KatalonSetup.main(args);
-    	ObjectsConverter.main(args);
-    	FeatureFileConverter.main(args);
+    	//KatalonSetup.main(args);
+    	//ObjectsConverter.main(args);
+    	//FeatureFileConverter.main(args);
     	TestConvertor.main(args);
-    	FeatureToStepDef.main(args);
-    	try {
-			UpdateListener.main(args);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+    	//stepC.main(args);
+    	//try {
+		//	UpdateListener.main(args);
+		//} catch (IOException e) {
+			// TODO Auto-generated catch block
+			//e.printStackTrace();
+		//}
     	
      
 }

@@ -20,6 +20,16 @@ public class loginStep {
 
     static WebDriver driver;
     DashboardPage dashboardPage = new DashboardPage();
+    		
+
+
+    // Example action: Checking if the element is displayed
+    if (loginLogo.isDisplayed()) {
+        System.out.println("Login logo is visible on the page.");
+    } else {
+        System.out.println("Login logo is not visible on the page.");
+    }
+
 
     // Initialize WebDriver before each test
     @Before
